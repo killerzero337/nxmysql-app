@@ -30,7 +30,7 @@ async function imgCreate(file) {
     // width: 600, aspect-ratio: 1
     const result = await cloudinary.uploader.upload(fileUri, {
       invalidate: true,
-      folder: "tienda",
+      folder: "galeria",
       public_id: file.name.split('.').slice(0, -1).join('.'), // eliminamos extensión del archivo
       aspect_ratio: "1.0",
       width: 600,
@@ -129,4 +129,86 @@ export async function deleteArticulo(formData) {
     console.log(error);
   }
   redirect('/articulos');
+}
+
+export async function getProveedores() {
+  unstable_noStore()  // para no cachear datos
+
+  try {
+    // Retardo artificial para fines demostrativos.
+    // No realizar en la vida real :)
+    console.log('Recuperando proveedores...');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+
+    const results = await db.query('select * from proveedores');
+    console.log(results);
+
+    return results;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+export async function newProveedor(formData) {
+  const nombre = formData.get('nombre');
+  const telefono = formData.get('telefono');
+  const file = formData.get('file')
+
+  try {
+    let results = null;
+    let query = null;
+
+    // si tenemos nuevo archivo en el input type=file
+    if (file.size > 0) {
+      const imagen = await imgCreate(file)
+      query = 'insert into proveedores(nombre,telefono,imagen) values (?, ?, ?)';
+      results = await db.query(query, [nombre, telefono, imagen]);
+    } else {
+      query = 'insert into proveedores(nombre,telefono) values (?, ?)';
+      results = await db.query(query, [nombre, telefono]);
+    }
+    console.log(results);
+  } catch (error) {
+    console.log(error);
+  }
+  redirect('/proveedores');
+}
+
+export async function deleteProveedor(formData) {
+  const id = formData.get('id');
+
+  try {
+    const query = 'delete from proveedores where id = ?';
+    const results = await db.query(query, [id]);
+    console.log(results);
+  } catch (error) {
+    console.log(error);
+  }
+  redirect('/proveedores');
+}
+
+
+export async function editProveedor(formData) {
+  const id = formData.get('id')
+  const nombre = formData.get('nombre')
+  const telefono = formData.get('telefono')
+  const file = formData.get('file')
+  try {
+    let results = null;
+    const query = 'update proveedores set ? where id = ? ';
+
+    // si tenemos nuevo archivo en el input type=file
+    if (file.size > 0) {
+      const imagen = await imgCreate(file)
+      results = await db.query(query, [{ nombre, telefono, imagen }, id]);
+    } else {
+      results = await db.query(query, [{ nombre, telefono }, id]);
+    }
+    console.log(results);
+  } catch (error) {
+    console.log(error);
+  }
+  redirect('/proveedores');
 }
